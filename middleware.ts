@@ -16,7 +16,7 @@ export function middleware(request: NextRequest) {
   }
   
   // Check for authentication token
-  const token = request.cookies.get("token")?.value;
+  const token = request.cookies.get("token");
   
   if (!token) {
     // Redirect to login if no token is present
@@ -27,7 +27,7 @@ export function middleware(request: NextRequest) {
   
   try {
     // Verify token
-    const decoded = verify(token, JWT_SECRET) as {
+    const decoded = verify(token.value, JWT_SECRET) as {
       userId: string;
       role: string;
     };
@@ -37,7 +37,20 @@ export function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL("/", request.url));
     }
     
-    return NextResponse.next();
+    const response = NextResponse.next();
+    
+    // Refresh the token if it's valid
+    response.cookies.set({
+      name: "token",
+      value: token.value,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7 // 7 days
+    });
+    
+    return response;
   } catch (error) {
     // Token is invalid, redirect to login
     const url = new URL("/login", request.url);

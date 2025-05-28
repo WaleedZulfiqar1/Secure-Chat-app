@@ -44,13 +44,15 @@ export default function LoginForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values),
+        credentials: "include", // Important for cookie handling
       });
       
       const data = await response.json();
       
       if (response.ok) {
         toast.success("Login successful!");
-        router.push("/dashboard");
+        // Force a hard navigation to ensure cookie is processed
+        window.location.href = "/dashboard";
       } else {
         toast.error(data.message || "Login failed");
       }

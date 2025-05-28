@@ -53,23 +53,28 @@ export async function POST(request: Request) {
       { expiresIn: "7d" }
     );
     
-    // Set JWT as cookie
-    cookies().set({
+    const response = NextResponse.json({
+      message: "Login successful",
+      user: {
+        _id: user._id,
+        email: user.email,
+        username: user.username,
+        role: user.role
+      }
+    });
+
+    // Set cookie with proper configuration
+    response.cookies.set({
       name: "token",
       value: token,
       httpOnly: true,
-      path: "/",
       secure: process.env.NODE_ENV === "production",
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7 // 7 days
     });
     
-    // Don't send back password or private key in response
-    const { password: _, rsaPrivateKey: __, ...userWithoutSensitiveInfo } = user;
-    
-    return NextResponse.json({
-      message: "Login successful",
-      user: userWithoutSensitiveInfo,
-    });
+    return response;
   } catch (error) {
     console.error("Login error:", error);
     return NextResponse.json(
